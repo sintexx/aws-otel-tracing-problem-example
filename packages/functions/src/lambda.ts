@@ -5,7 +5,6 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { trace } from '@opentelemetry/api';
-import { ApiHandler } from "sst/node/api";
 import { Bucket } from "sst/node/bucket";
 import { Table } from "sst/node/table";
 
@@ -14,7 +13,7 @@ const tracer = trace.getTracer('helloWorld');
 const s3 = new S3Client({});
 const dynamodb = new DynamoDBClient({});
 
-export const handler = ApiHandler(async (_evt) => {
+export const handler = async () => {
   return tracer.startActiveSpan('helloWorld3', async (masterSpan) => {
     
     masterSpan.setAttribute("test", "hello world")
@@ -61,13 +60,8 @@ export const handler = ApiHandler(async (_evt) => {
     })
 
 
-    const r = {
-      statusCode: 200,
-      body: `Hello world. The time is ${new Date().toISOString()}`,
-    };
-
     masterSpan.end()
-    return r
+    return `Hello world. The time is ${new Date().toISOString()}`
   })
 
-});
+};

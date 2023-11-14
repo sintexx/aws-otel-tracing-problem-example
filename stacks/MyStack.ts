@@ -1,5 +1,5 @@
 import { LayerVersion } from "aws-cdk-lib/aws-lambda";
-import { Api, Bucket, Config, EventBus, StackContext, Table } from "sst/constructs";
+import { AppSyncApi, Bucket, Config, EventBus, StackContext, Table } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
 
@@ -23,7 +23,7 @@ export function API({ stack }: StackContext) {
     value: "1.2.0",
   });
 
-  const api = new Api(stack, "api", {
+  const appSync = new AppSyncApi(stack, "endpoint", {
     defaults: {
       function: {
         bind: [bus, sampleBucket, t, VERSION],
@@ -36,18 +36,17 @@ export function API({ stack }: StackContext) {
         ],
       },
     },
-    routes: {
-      "GET /": "packages/functions/src/lambda.handler",
-      "GET /todo": "packages/functions/src/todo.list",
-      "POST /todo": "packages/functions/src/todo.create",
+    schema: 'graphql/schema.graphql',
+    resolvers: {
+      "Query    root": "packages/functions/src/lambda.handler",
     },
-  });
+  })
 
   bus.subscribe("todo.created", {
     handler: "packages/functions/src/events/todo-created.handler",
   });
 
   stack.addOutputs({
-    ApiEndpoint: api.url,
+    ApiEndpoint: appSync.url,
   });
 }
