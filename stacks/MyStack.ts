@@ -1,5 +1,5 @@
 import { LayerVersion } from "aws-cdk-lib/aws-lambda";
-import { Api, Bucket, EventBus, StackContext, Table } from "sst/constructs";
+import { Api, Bucket, Config, EventBus, StackContext, Table } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
 
@@ -19,10 +19,14 @@ export function API({ stack }: StackContext) {
     },
   });
 
+  const VERSION = new Config.Parameter(stack, "VERSION", {
+    value: "1.2.0",
+  });
+
   const api = new Api(stack, "api", {
     defaults: {
       function: {
-        bind: [bus, sampleBucket, t],
+        bind: [bus, sampleBucket, t, VERSION],
         layers: [
           LayerVersion.fromLayerVersionArn(
             stack,

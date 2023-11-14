@@ -1,3 +1,4 @@
+import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 import {
   // This command supersedes the ListObjectsCommand and is the recommended way to list objects.
   ListObjectsV2Command,
@@ -8,18 +9,15 @@ import { ApiHandler } from "sst/node/api";
 import { Bucket } from "sst/node/bucket";
 import { Table } from "sst/node/table";
 
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
-
 const tracer = trace.getTracer('helloWorld');
 
 const s3 = new S3Client({});
 const dynamodb = new DynamoDBClient({});
 
 export const handler = ApiHandler(async (_evt) => {
-  return tracer.startActiveSpan('helloWorld2', async (masterSpan) => {
+  return tracer.startActiveSpan('helloWorld3', async (masterSpan) => {
     
     masterSpan.setAttribute("test", "hello world")
-
 
 
 
@@ -48,6 +46,18 @@ export const handler = ApiHandler(async (_evt) => {
       })
 
       listBucket.end()
+    })
+
+    await tracer.startActiveSpan("getSSTConfig", async (sstConfigTrace) => {
+
+      const sstConfig = await import('sst/node/config');
+
+      const c = (sstConfig).Config;
+
+      sstConfigTrace.setAttribute("VersionConfigSST", c.VERSION)
+      
+      sstConfigTrace.end()
+
     })
 
 
