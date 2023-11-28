@@ -1,3 +1,4 @@
+import { RemovalPolicy } from "aws-cdk-lib/core";
 import { SSTConfig } from "sst";
 import { API } from "./stacks/MyStack";
 
@@ -20,6 +21,7 @@ function getMonitoringLayer(app: any) {
       OTEL_PROPAGATORS: 'tracecontext',
       OTEL_NODE_RESOURCE_DETECTORS: 'none',
       OTEL_TRACES_SAMPLER: 'always_on',
+      OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION: 'true',
       OPENTELEMETRY_COLLECTOR_CONFIG_FILE:
         'yaml:' +
         `{receivers: {otlp: {protocols: {grpc, http}}}, exporters: {otlp: {endpoint: 'api.honeycomb.io:443', headers: {x-honeycomb-team: '${process
@@ -37,9 +39,11 @@ export default {
     };
   },
   stacks(app) {
+    app.setDefaultRemovalPolicy(RemovalPolicy.DESTROY);
+
     app.setDefaultFunctionProps({
       runtime: 'nodejs18.x',
-      architecture: 'arm_64',
+      architecture: 'x86_64',
       tracing: 'disabled',
       ...getMonitoringLayer(app),
     });

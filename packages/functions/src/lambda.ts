@@ -4,7 +4,8 @@ import {
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { trace } from '@opentelemetry/api';
+import { TraceFlags, context, trace } from '@opentelemetry/api';
+
 import { Bucket } from "sst/node/bucket";
 import { Table } from "sst/node/table";
 
@@ -13,8 +14,21 @@ const tracer = trace.getTracer('helloWorld');
 const s3 = new S3Client({});
 const dynamodb = new DynamoDBClient({});
 
-export const handler = async () => {
-  return tracer.startActiveSpan('helloWorld3', async (masterSpan) => {
+export const handler = async (event: any) => {
+
+
+  let newContext = trace.setSpanContext(context.active(), {
+    traceId: event.traceId,
+    spanId: event.spanId,
+    traceFlags: TraceFlags.SAMPLED,
+    isRemote: true });
+
+  context.with(newContext, () => {
+    const span = tracer.startSpan('handler function', {}, newContext);
+    span.end();
+  });
+  
+  const r = tracer.startActiveSpan('helloWorld with wait', {}, newContext, async (masterSpan) => {
     
     masterSpan.setAttribute("test", "hello world")
 
@@ -61,7 +75,13 @@ export const handler = async () => {
 
 
     masterSpan.end()
+
+
     return `Hello world. The time is ${new Date().toISOString()}`
   })
+
+
+  await new Promise(r => setTimeout(r, 5000));
+  return r
 
 };

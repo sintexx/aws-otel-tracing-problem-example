@@ -1,5 +1,5 @@
 import { LayerVersion } from "aws-cdk-lib/aws-lambda";
-import { AppSyncApi, Bucket, Config, EventBus, StackContext, Table } from "sst/constructs";
+import { AppSyncApi, Bucket, Config, EventBus, Queue, StackContext, Table } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
 
@@ -31,7 +31,7 @@ export function API({ stack }: StackContext) {
           LayerVersion.fromLayerVersionArn(
             stack,
             'otelBaseLayer',
-            `arn:aws:lambda:eu-central-1:901920570463:layer:aws-otel-nodejs-arm64-ver-1-15-0:1`,
+            `arn:aws:lambda:eu-central-1:901920570463:layer:aws-otel-nodejs-amd64-ver-1-17-1:1`,
           ),
         ],
       },
@@ -44,6 +44,23 @@ export function API({ stack }: StackContext) {
 
   bus.subscribe("todo.created", {
     handler: "packages/functions/src/events/todo-created.handler",
+  });
+
+  new Queue(stack, "TestQueue", {
+    consumer: {
+      function: {
+        handler: "packages/functions/src/lambda.handler",
+        timeout: "1 minute",
+        bind: [bus, sampleBucket, t, VERSION],
+        layers: [
+          LayerVersion.fromLayerVersionArn(
+            stack,
+            'otelBaseLayer2',
+            `arn:aws:lambda:eu-central-1:901920570463:layer:aws-otel-nodejs-amd64-ver-1-17-1:1`,
+          ),
+        ],
+      },
+    },
   });
 
   stack.addOutputs({
