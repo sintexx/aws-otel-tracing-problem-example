@@ -1,5 +1,5 @@
 import { LayerVersion } from "aws-cdk-lib/aws-lambda";
-import { AppSyncApi, Bucket, Config, EventBus, Queue, StackContext, Table } from "sst/constructs";
+import { AppSyncApi, Bucket, Config, Queue, StackContext, Table } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
 
@@ -13,11 +13,6 @@ export function API({ stack }: StackContext) {
     primaryIndex: { partitionKey: "noteId", sortKey: "userId" },
   });
 
-  const bus = new EventBus(stack, "bus", {
-    defaults: {
-      retries: 10,
-    },
-  });
 
   const VERSION = new Config.Parameter(stack, "VERSION", {
     value: "1.2.0",
@@ -26,7 +21,7 @@ export function API({ stack }: StackContext) {
   const appSync = new AppSyncApi(stack, "endpoint", {
     defaults: {
       function: {
-        bind: [bus, sampleBucket, t, VERSION],
+        bind: [sampleBucket, t, VERSION],
         layers: [
           LayerVersion.fromLayerVersionArn(
             stack,
@@ -34,7 +29,29 @@ export function API({ stack }: StackContext) {
             `arn:aws:lambda:eu-central-1:901920570463:layer:aws-otel-nodejs-amd64-ver-1-17-1:1`,
           ),
         ],
+        nodejs: {
+          esbuild: {
+            external: [
+              '@opentelemetry/sdk-node',
+              '@opentelemetry/auto-instrumentations-node',
+              '@opentelemetry/instrumentation-http',
+          '@opentelemetry/instrumentation-express',
+          '@opentelemetry/instrumentation',
+          '@opentelemetry/instrumentation-graphql',
+          '@opentelemetry/instrumentation-aws-lambda',
+          '@opentelemetry/api',
+          '@opentelemetry/core',
+          '@opentelemetry/resources',
+          '@opentelemetry/tracing',
+          '@opentelemetry/node',
+          '@opentelemetry/exporter-collector',
+          'http',
+          'graphql'
+            ]
+          }
+        }
       },
+      
     },
     schema: 'graphql/schema.graphql',
     resolvers: {
@@ -42,16 +59,12 @@ export function API({ stack }: StackContext) {
     },
   })
 
-  bus.subscribe("todo.created", {
-    handler: "packages/functions/src/events/todo-created.handler",
-  });
-
   new Queue(stack, "TestQueue", {
     consumer: {
       function: {
         handler: "packages/functions/src/lambda.handler",
         timeout: "1 minute",
-        bind: [bus, sampleBucket, t, VERSION],
+        bind: [sampleBucket, t, VERSION],
         layers: [
           LayerVersion.fromLayerVersionArn(
             stack,

@@ -19,6 +19,7 @@ function getMonitoringLayer(app: any) {
       AWS_LAMBDA_EXEC_WRAPPER: '/opt/otel-handler',
       LIBHONEY_DATASET: 'smsf-dashboard',
       OTEL_PROPAGATORS: 'tracecontext',
+      OTEL_LOG_LEVEL: 'debug',
       OTEL_NODE_RESOURCE_DETECTORS: 'none',
       OTEL_TRACES_SAMPLER: 'always_on',
       OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION: 'true',
